@@ -8,327 +8,252 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-A comprehensive n8n community node for DealHub, the quote-to-cash ecosystem that unifies CPQ (Configure, Price, Quote), CLM (Contract Lifecycle Management), subscription management, and revenue recognition. This node enables workflow automation for quote management, document generation, DealRoom operations, and CRM synchronization.
+An n8n community node for integrating with DealHub's sales engagement platform. This node provides access to 6 core resources including Quotes, DealRooms, Products, Contacts, Integrations, and Analytics, enabling automation of sales processes, deal management, and revenue operations workflows.
 
-![n8n](https://img.shields.io/badge/n8n-community--node-orange)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
+![DealHub API](https://img.shields.io/badge/DealHub-API-orange)
+![Sales Automation](https://img.shields.io/badge/Sales-Automation-green)
+![Revenue Operations](https://img.shields.io/badge/RevOps-Ready-purple)
 
 ## Features
 
-- **Quote Management** - Create, update, approve, reject, publish, and manage quotes with full lifecycle support
-- **DealRoom Operations** - Create interactive proposal rooms, manage files, track visitor engagement, and handle e-signatures
-- **Product Catalog** - Manage products, pricing rules, bundles, and attributes
-- **Playbook Automation** - Access guided selling playbooks, questions, and simulate configurations
-- **Approval Workflows** - Handle approval requests, delegation, and approval history
-- **Document Generation** - Generate proposals, contracts, and export to PDF/Excel
-- **Opportunity Sync** - Bidirectional CRM synchronization for opportunities
-- **User Management** - Access user details, teams, and activity logs
-- **Version Control** - Manage product/playbook versions and rollbacks
-- **Webhook Events** - Real-time event notifications for quote and DealRoom activities
+- **Quote Management** - Create, update, and track sales quotes with advanced pricing and approval workflows
+- **DealRoom Operations** - Manage collaborative deal spaces with document sharing and stakeholder engagement
+- **Product Catalog** - Access and manage product information, pricing, and configuration options
+- **Contact Management** - Synchronize contact data and manage buyer personas and stakeholder information  
+- **Integration Hub** - Connect DealHub with CRM systems, payment processors, and other sales tools
+- **Analytics & Reporting** - Extract deal performance metrics, conversion rates, and sales pipeline analytics
+- **Real-time Updates** - Webhook support for instant notifications on deal status changes
+- **Bulk Operations** - Process multiple records efficiently with batch operations support
 
 ## Installation
 
 ### Community Nodes (Recommended)
 
 1. Open n8n
-2. Go to **Settings** > **Community Nodes**
-3. Click **Install**
+2. Go to **Settings** → **Community Nodes**
+3. Click **Install a community node**
 4. Enter `n8n-nodes-dealhub`
 5. Click **Install**
 
 ### Manual Installation
 
 ```bash
-# Navigate to your n8n installation directory
 cd ~/.n8n
-
-# Install the package
 npm install n8n-nodes-dealhub
 ```
 
 ### Development Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/Velocity-BPA/n8n-nodes-dealhub.git
 cd n8n-nodes-dealhub
-
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
-
-# Create symlink to n8n custom nodes directory
 mkdir -p ~/.n8n/custom
 ln -s $(pwd) ~/.n8n/custom/n8n-nodes-dealhub
-
-# Restart n8n
 n8n start
 ```
 
 ## Credentials Setup
 
-### DealHub API Credentials
-
-| Field | Description |
-|-------|-------------|
-| **API Key** | API key generated from DealHub Admin Settings > API Configuration |
-| **Environment** | Select Production or Sandbox environment |
-| **Subdomain** | Your DealHub subdomain identifier (e.g., `mycompany` from `mycompany.dealhub.io`) |
-
-### Obtaining API Credentials
-
-1. Log in to your DealHub admin account
-2. Navigate to **Admin Settings** > **API Configuration**
-3. Generate a new API key with appropriate permissions
-4. Copy the API key and configure in n8n
+| Field | Description | Required |
+|-------|-------------|----------|
+| API Key | Your DealHub API key from Settings > API Keys | Yes |
+| Environment | DealHub environment (production/sandbox) | Yes |
+| Base URL | Custom DealHub instance URL (if applicable) | No |
 
 ## Resources & Operations
 
-### Quote (14 operations)
+### 1. Quotes
 
 | Operation | Description |
 |-----------|-------------|
-| Get | Retrieve a specific quote by ID |
-| Get All | List all quotes with filtering |
-| Create | Create a new quote via headless API |
-| Update | Update quote details and metadata |
-| Delete | Delete a draft quote |
-| Submit | Submit quote for approval |
-| Approve | Approve a pending quote |
-| Reject | Reject a quote with reason |
-| Publish | Publish quote to DealRoom |
-| Clone | Clone an existing quote |
-| Get Versions | Get all versions of a quote |
-| Set Active Version | Set a specific version as active |
-| Export PDF | Export quote as PDF document |
-| Export Excel | Export quote as Excel spreadsheet |
+| Create | Create a new quote with products, pricing, and terms |
+| Get | Retrieve quote details by ID |
+| Update | Update quote information, products, or pricing |
+| Delete | Remove a quote from the system |
+| List | Get all quotes with filtering and pagination |
+| Send | Send quote to buyers via email |
+| Approve | Submit quote for approval workflow |
+| Clone | Create a copy of an existing quote |
 
-### DealRoom (11 operations)
+### 2. DealRooms
 
 | Operation | Description |
 |-----------|-------------|
-| Get | Get DealRoom details by ID |
-| Get All | List all DealRooms |
-| Create | Create a new DealRoom for a quote |
-| Update | Update DealRoom settings |
-| Delete | Delete a DealRoom |
-| Add File | Add a file to DealRoom |
-| Remove File | Remove a file from DealRoom |
-| Get Activity | Get visitor activity metrics |
-| Get Signers | Get signers and status |
-| Send Reminder | Send signing reminder |
-| Expire | Manually expire a DealRoom |
+| Create | Create a new collaborative deal room |
+| Get | Retrieve deal room details and content |
+| Update | Update deal room settings and permissions |
+| Delete | Remove a deal room |
+| List | Get all deal rooms with filtering |
+| Add Content | Upload documents and materials to deal room |
+| Invite | Invite stakeholders to join deal room |
+| Track Activity | Get engagement and activity metrics |
 
-### Product (10 operations)
+### 3. Products
 
 | Operation | Description |
 |-----------|-------------|
-| Get | Get product details by ID |
-| Get All | List all products in catalog |
-| Create | Create a new product |
-| Update | Update product information |
-| Delete | Remove a product from catalog |
-| Get Pricing | Get pricing rules for a product |
-| Update Pricing | Update product pricing |
-| Get Attributes | Get product attributes |
-| Add to Bundle | Add product to a bundle |
-| Remove from Bundle | Remove product from bundle |
+| Create | Add new product to catalog |
+| Get | Retrieve product details and specifications |
+| Update | Update product information and pricing |
+| Delete | Remove product from catalog |
+| List | Get all products with filtering and search |
+| Get Pricing | Retrieve current pricing and discount rules |
+| Update Pricing | Modify product pricing and rules |
+| Bulk Import | Import multiple products from external source |
 
-### Playbook (5 operations)
+### 4. Contacts
 
 | Operation | Description |
 |-----------|-------------|
-| Get | Get playbook details |
-| Get All | List all playbooks |
-| Get Questions | Get playbook questions |
-| Get Answer Options | Get answer options for a question |
-| Simulate | Simulate playbook answers |
+| Create | Add new contact to DealHub |
+| Get | Retrieve contact details and history |
+| Update | Update contact information |
+| Delete | Remove contact from system |
+| List | Get all contacts with filtering |
+| Merge | Combine duplicate contact records |
+| Add to Deal | Associate contact with specific deal |
+| Get Activity | Retrieve contact engagement history |
 
-### User (6 operations)
-
-| Operation | Description |
-|-----------|-------------|
-| Get | Get user details by ID |
-| Get All | List all users |
-| Get Current | Get authenticated user |
-| Get Teams | Get user's teams |
-| Get Quotes | Get quotes assigned to user |
-| Get Activity | Get user activity log |
-
-### Version (7 operations)
+### 5. Integrations
 
 | Operation | Description |
 |-----------|-------------|
-| Get | Get version details |
-| Get All | List all versions |
-| Get Current | Get active version |
-| Get Products | Get products in version |
-| Get Playbooks | Get playbooks in version |
-| Publish | Publish a version |
-| Rollback | Rollback to previous version |
+| List | Get all available integrations |
+| Get | Retrieve integration configuration details |
+| Create | Set up new integration connection |
+| Update | Modify integration settings |
+| Delete | Remove integration connection |
+| Test | Validate integration connection |
+| Sync | Trigger data synchronization |
+| Get Logs | Retrieve integration activity logs |
 
-### Opportunity (6 operations)
-
-| Operation | Description |
-|-----------|-------------|
-| Get | Get opportunity details |
-| Get All | List all opportunities |
-| Create | Create new opportunity |
-| Update | Update opportunity details |
-| Get Quotes | Get quotes for opportunity |
-| Sync | Sync with CRM |
-
-### Approval (6 operations)
+### 6. Analytics
 
 | Operation | Description |
 |-----------|-------------|
-| Get | Get approval request details |
-| Get All | List pending approvals |
-| Approve | Approve a request |
-| Reject | Reject with reason |
-| Delegate | Delegate to another approver |
-| Get History | Get approval history |
-
-### Document (7 operations)
-
-| Operation | Description |
-|-----------|-------------|
-| Get | Get document by ID |
-| Get All | List all documents |
-| Generate | Generate document from quote |
-| Download | Download document file |
-| Delete | Delete a document |
-| Get Templates | List document templates |
-| Preview | Preview before generation |
-
-### Webhook (7 operations)
-
-| Operation | Description |
-|-----------|-------------|
-| Get | Get webhook configuration |
-| Get All | List all webhooks |
-| Create | Create new webhook |
-| Update | Update webhook settings |
-| Delete | Remove webhook |
-| Get Events | List available events |
-| Test | Send test event |
-
-## Trigger Node
-
-The **DealHub Trigger** node listens for real-time webhook events:
-
-| Event | Description |
-|-------|-------------|
-| quote.created | New quote created |
-| quote.updated | Quote details updated |
-| quote.submitted | Quote submitted for approval |
-| quote.approved | Quote approved |
-| quote.rejected | Quote rejected |
-| quote.published | Quote published to DealRoom |
-| quote.won | Quote marked as won |
-| quote.lost | Quote marked as lost |
-| dealroom.viewed | DealRoom accessed by prospect |
-| dealroom.signed | Document signed in DealRoom |
-| approval.requested | New approval request |
-| approval.completed | Approval process completed |
-| document.generated | Document generation completed |
-| opportunity.synced | Opportunity synced with CRM |
+| Get Metrics | Retrieve key performance indicators |
+| Deal Analytics | Get deal pipeline and conversion metrics |
+| Quote Analytics | Analyze quote performance and win rates |
+| User Activity | Get user engagement and activity reports |
+| Revenue Reports | Generate revenue and forecasting data |
+| Time Reports | Analyze deal cycle and response times |
+| Custom Query | Execute custom analytics queries |
+| Export Data | Export analytics data in various formats |
 
 ## Usage Examples
 
-### Create and Publish a Quote
-
 ```javascript
-// 1. Create a quote
+// Create a new quote with products
 {
-  "resource": "quote",
+  "resource": "quotes",
   "operation": "create",
-  "name": "Enterprise Proposal - Q1 2024",
-  "opportunityId": "opp_12345",
-  "playbookId": "pb_standard",
-  "currency": "USD",
-  "expirationDate": "2024-03-31"
-}
-
-// 2. Submit for approval
-{
-  "resource": "quote",
-  "operation": "submit",
-  "quoteId": "{{$json.id}}"
-}
-
-// 3. Publish to DealRoom
-{
-  "resource": "quote",
-  "operation": "publish",
-  "quoteId": "{{$json.id}}",
-  "createDealRoom": true,
-  "notifyRecipients": true
+  "data": {
+    "name": "Q4 Enterprise Solution",
+    "buyerCompany": "Acme Corporation",
+    "buyerEmail": "procurement@acme.com",
+    "products": [
+      {
+        "productId": "prod_123",
+        "quantity": 100,
+        "unitPrice": 99.99
+      }
+    ],
+    "validUntil": "2024-12-31"
+  }
 }
 ```
-
-### Generate Document from Quote
 
 ```javascript
+// Create deal room and invite stakeholders
 {
-  "resource": "document",
-  "operation": "generate",
-  "quoteId": "qt_12345",
-  "templateId": "tmpl_proposal",
-  "format": "pdf",
-  "includeLineItems": true,
-  "includeTerms": true
+  "resource": "dealrooms",
+  "operation": "create",
+  "data": {
+    "name": "Acme Corp - Enterprise Deal",
+    "dealValue": 150000,
+    "stakeholders": [
+      {
+        "email": "john.doe@acme.com",
+        "role": "Decision Maker"
+      },
+      {
+        "email": "jane.smith@acme.com", 
+        "role": "Technical Lead"
+      }
+    ],
+    "content": [
+      "proposal.pdf",
+      "technical-specs.docx"
+    ]
+  }
 }
 ```
 
-### Monitor DealRoom Activity
+```javascript
+// Get deal analytics for current quarter
+{
+  "resource": "analytics",
+  "operation": "dealAnalytics",
+  "parameters": {
+    "dateRange": "current_quarter",
+    "metrics": ["conversion_rate", "avg_deal_size", "cycle_time"],
+    "groupBy": "month",
+    "filters": {
+      "dealValue": {"min": 10000},
+      "stage": ["negotiation", "proposal", "closed_won"]
+    }
+  }
+}
+```
 
-Use the DealHub Trigger node with `dealroom.viewed` event to track when prospects view your proposals and trigger follow-up workflows.
+```javascript
+// Bulk update product pricing
+{
+  "resource": "products",
+  "operation": "bulkImport",
+  "data": {
+    "products": [
+      {
+        "sku": "ENT-001",
+        "name": "Enterprise License",
+        "price": 1999.99,
+        "discountRules": {
+          "volume": [
+            {"min": 10, "discount": 0.1},
+            {"min": 50, "discount": 0.15}
+          ]
+        }
+      }
+    ],
+    "updateExisting": true
+  }
+}
+```
 
 ## Error Handling
 
-The node handles DealHub API errors with detailed messages:
-
-| Error Code | Description |
-|------------|-------------|
-| INVALID_REQUEST (400) | Malformed request or invalid parameters |
-| UNAUTHORIZED (401) | Invalid or expired API key |
-| FORBIDDEN (403) | Insufficient permissions |
-| NOT_FOUND (404) | Resource not found |
-| RATE_LIMITED (429) | Too many requests |
-| INTERNAL_ERROR (500) | Server-side error |
-
-## Security Best Practices
-
-1. **Store API keys securely** - Use n8n credentials, never hardcode
-2. **Use environment selection** - Test in sandbox before production
-3. **Verify webhook signatures** - Enable signature verification for triggers
-4. **Limit permissions** - Create API keys with minimum required access
-5. **Monitor rate limits** - The node handles rate limiting automatically
+| Error | Description | Solution |
+|-------|-------------|----------|
+| 401 Unauthorized | Invalid or expired API key | Verify API key in credentials and check expiration |
+| 403 Forbidden | Insufficient permissions for operation | Contact admin to verify user permissions and API scope |
+| 404 Not Found | Requested resource (quote, deal, etc.) doesn't exist | Check resource ID and verify it exists in DealHub |
+| 422 Validation Error | Invalid data format or missing required fields | Review API documentation and validate request payload |
+| 429 Rate Limit | Too many API requests in time period | Implement retry logic with exponential backoff |
+| 500 Server Error | DealHub internal server error | Check DealHub status page and retry after delay |
 
 ## Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Build
 npm run build
-
-# Run linting
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Run tests
 npm test
-
-# Run tests with coverage
-npm run test:coverage
+npm run lint
+npm run dev
 ```
 
 ## Author
@@ -345,30 +270,24 @@ This n8n community node is licensed under the **Business Source License 1.1**.
 Permitted for personal, educational, research, and internal business use.
 
 ### Commercial Use
-Use of this node within any SaaS, PaaS, hosted platform, managed service,
-or paid automation offering requires a commercial license.
+Use of this node within any SaaS, PaaS, hosted platform, managed service, or paid automation offering requires a commercial license.
 
-For licensing inquiries:
-**licensing@velobpa.com**
+For licensing inquiries: **licensing@velobpa.com**
 
 See [LICENSE](LICENSE), [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md), and [LICENSING_FAQ.md](LICENSING_FAQ.md) for details.
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Please ensure:
+
+1. Code follows existing style conventions
+2. All tests pass (`npm test`)
+3. Linting passes (`npm run lint`)
+4. Documentation is updated for new features
+5. Commit messages are descriptive
 
 ## Support
 
-- **Documentation**: [DealHub API Docs](https://developers.dealhub.io)
 - **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-dealhub/issues)
-- **n8n Community**: [n8n Community Forum](https://community.n8n.io)
-
-## Acknowledgments
-
-- [DealHub](https://dealhub.io) for their comprehensive CPQ platform and API
-- [n8n](https://n8n.io) for the powerful workflow automation platform
-- The n8n community for inspiration and best practices
+- **DealHub API Documentation**: [DealHub Developer Portal](https://developers.dealhub.io)
+- **DealHub Community**: [DealHub User Community](https://community.dealhub.io)
