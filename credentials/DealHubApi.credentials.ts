@@ -12,20 +12,18 @@ export class DealHubApi implements ICredentialType {
 			displayName: 'API Key',
 			name: 'apiKey',
 			type: 'string',
-			typeOptions: {
-				password: true,
-			},
+			typeOptions: { password: true },
 			default: '',
+			description: 'API key for DealHub authentication. Generated in DealHub admin console under Settings > API Configuration.',
 			required: true,
-			description: 'API key generated in DealHub admin panel under API Settings',
 		},
 		{
 			displayName: 'API Base URL',
 			name: 'baseUrl',
 			type: 'string',
 			default: 'https://api.dealhub.io/v1',
+			description: 'Base URL for the DealHub API',
 			required: true,
-			description: 'Base URL for DealHub API',
 		},
 	];
 }
