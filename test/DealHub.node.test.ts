@@ -67,1411 +67,951 @@ describe('DealHub Node', () => {
   });
 
   // Resource-specific tests
-describe('Quotes Resource', () => {
+describe('Deal Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({ 
+				apiKey: 'test-key', 
+				baseUrl: 'https://api.dealhub.io/v1' 
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: { 
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn() 
+			},
+		};
+	});
+
+	it('should get all deals successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getAll')
+			.mockReturnValueOnce('active')
+			.mockReturnValueOnce('owner123')
+			.mockReturnValueOnce('')
+			.mockReturnValueOnce(50)
+			.mockReturnValueOnce(0);
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ deals: [] });
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://api.dealhub.io/v1/deals?status=active&owner_id=owner123&limit=50&offset=0',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			json: true,
+		});
+	});
+
+	it('should get a specific deal successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('get')
+			.mockReturnValueOnce('deal123');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ id: 'deal123', name: 'Test Deal' });
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({ id: 'deal123', name: 'Test Deal' });
+	});
+
+	it('should create a deal successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('create')
+			.mockReturnValueOnce('New Deal')
+			.mockReturnValueOnce('Deal description')
+			.mockReturnValueOnce('owner123')
+			.mockReturnValueOnce('account456')
+			.mockReturnValueOnce(10000)
+			.mockReturnValueOnce('prospecting');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ id: 'deal123', name: 'New Deal' });
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'POST',
+			url: 'https://api.dealhub.io/v1/deals',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			body: {
+				name: 'New Deal',
+				description: 'Deal description',
+				owner_id: 'owner123',
+				account_id: 'account456',
+				amount: 10000,
+				stage: 'prospecting',
+			},
+			json: true,
+		});
+	});
+
+	it('should handle errors gracefully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('get').mockReturnValueOnce('deal123');
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json.error).toBe('API Error');
+	});
+
+	it('should send a deal successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('send')
+			.mockReturnValueOnce('deal123')
+			.mockReturnValueOnce('user1@example.com, user2@example.com')
+			.mockReturnValueOnce('Please review this deal');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ sent: true });
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'POST',
+			url: 'https://api.dealhub.io/v1/deals/deal123/send',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			body: {
+				recipients: ['user1@example.com', 'user2@example.com'],
+				message: 'Please review this deal',
+			},
+			json: true,
+		});
+	});
+
+	it('should delete a deal successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('delete')
+			.mockReturnValueOnce('deal123');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ deleted: true });
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'DELETE',
+			url: 'https://api.dealhub.io/v1/deals/deal123',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			json: true,
+		});
+	});
+
+	it('should get deal status successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getStatus')
+			.mockReturnValueOnce('deal123');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ 
+			status: 'sent', 
+			views: 5, 
+			engagement: 'high' 
+		});
+
+		const result = await executeDealOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({ 
+			status: 'sent', 
+			views: 5, 
+			engagement: 'high' 
+		});
+	});
+});
+
+describe('DealRoom Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-api-key',
+				baseUrl: 'https://api.dealhub.io/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+			},
+		};
+	});
+
+	describe('getAll operation', () => {
+		it('should retrieve all deal rooms successfully', async () => {
+			const mockResponse = { dealrooms: [{ id: '1', name: 'Test Room' }] };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAll')
+				.mockReturnValueOnce('deal123')
+				.mockReturnValueOnce('active')
+				.mockReturnValueOnce(50)
+				.mockReturnValueOnce(0);
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+
+		it('should handle errors in getAll operation', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getAll');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('get operation', () => {
+		it('should retrieve a specific deal room successfully', async () => {
+			const mockResponse = { id: '1', name: 'Test Room' };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('get')
+				.mockReturnValueOnce('dealroom123');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('create operation', () => {
+		it('should create a new deal room successfully', async () => {
+			const mockResponse = { id: '1', name: 'New Room' };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('create')
+				.mockReturnValueOnce('deal123')
+				.mockReturnValueOnce('New Room')
+				.mockReturnValueOnce('Room description')
+				.mockReturnValueOnce('user1@test.com,user2@test.com');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('update operation', () => {
+		it('should update a deal room successfully', async () => {
+			const mockResponse = { id: '1', name: 'Updated Room' };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('update')
+				.mockReturnValueOnce('dealroom123')
+				.mockReturnValueOnce('Updated Room')
+				.mockReturnValueOnce('Updated description');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('delete operation', () => {
+		it('should delete a deal room successfully', async () => {
+			const mockResponse = { success: true };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('delete')
+				.mockReturnValueOnce('dealroom123');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('getActivity operation', () => {
+		it('should retrieve deal room activity successfully', async () => {
+			const mockResponse = { activities: [{ type: 'view', timestamp: '2023-01-01' }] };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getActivity')
+				.mockReturnValueOnce('dealroom123')
+				.mockReturnValueOnce('2023-01-01')
+				.mockReturnValueOnce('2023-01-31');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('invite operation', () => {
+		it('should invite participants successfully', async () => {
+			const mockResponse = { success: true, invited: 2 };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('invite')
+				.mockReturnValueOnce('dealroom123')
+				.mockReturnValueOnce('user1@test.com,user2@test.com');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeDealRoomOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+});
+
+describe('Product Resource', () => {
   let mockExecuteFunctions: any;
 
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.dealhub.io/v1',
-        tenantId: 'test-tenant',
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.dealhub.io/v1' 
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
+      helpers: { 
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn() 
       },
     };
   });
 
-  it('should create a quote successfully', async () => {
-    const mockQuoteData = { id: '123', name: 'Test Quote', status: 'draft' };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'create';
-        case 'name': return 'Test Quote';
-        case 'templateId': return 'template-123';
-        case 'contactId': return 'contact-123';
-        case 'products': return '[{"id": "prod-1", "quantity": 2}]';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockQuoteData);
+  it('should get all products successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getAll')
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(50)
+      .mockReturnValueOnce(0);
 
-    const result = await executeQuotesOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ products: [] });
 
-    expect(result).toEqual([{ json: mockQuoteData, pairedItem: { item: 0 } }]);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'POST',
-      url: 'https://api.dealhub.io/v1/quotes',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-        'X-Tenant-ID': 'test-tenant',
-      },
-      body: {
-        name: 'Test Quote',
-        templateId: 'template-123',
-        contactId: 'contact-123',
-        products: [{ id: 'prod-1', quantity: 2 }],
-      },
-      json: true,
-    });
-  });
+    const result = await executeProductOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-  it('should get a quote successfully', async () => {
-    const mockQuoteData = { id: '123', name: 'Test Quote', status: 'draft' };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'get';
-        case 'id': return '123';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockQuoteData);
-
-    const result = await executeQuotesOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toEqual([{ json: mockQuoteData, pairedItem: { item: 0 } }]);
+    expect(result).toHaveLength(1);
     expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
       method: 'GET',
-      url: 'https://api.dealhub.io/v1/quotes/123',
+      url: 'https://api.dealhub.io/v1/products?active=true&limit=50&offset=0',
       headers: {
-        'Authorization': 'Bearer test-api-key',
-        'X-Tenant-ID': 'test-tenant',
+        'Authorization': 'Bearer test-key',
+        'Content-Type': 'application/json',
       },
       json: true,
     });
   });
 
-  it('should get all quotes with filters', async () => {
-    const mockQuotesData = { quotes: [{ id: '123', name: 'Test Quote' }], total: 1 };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getAll';
-        case 'status': return 'draft';
-        case 'limit': return 10;
-        case 'offset': return 0;
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockQuotesData);
+  it('should get a specific product successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('get')
+      .mockReturnValueOnce('prod123');
 
-    const result = await executeQuotesOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ id: 'prod123', name: 'Test Product' });
 
-    expect(result).toEqual([{ json: mockQuotesData, pairedItem: { item: 0 } }]);
+    const result = await executeProductOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toHaveLength(1);
     expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
       method: 'GET',
-      url: 'https://api.dealhub.io/v1/quotes?status=draft&limit=10&offset=0',
+      url: 'https://api.dealhub.io/v1/products/prod123',
       headers: {
-        'Authorization': 'Bearer test-api-key',
-        'X-Tenant-ID': 'test-tenant',
+        'Authorization': 'Bearer test-key',
+        'Content-Type': 'application/json',
       },
       json: true,
     });
   });
 
-  it('should send a quote successfully', async () => {
-    const mockResponse = { success: true, message: 'Quote sent successfully' };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'send';
-        case 'id': return '123';
-        case 'email': return 'customer@example.com';
-        case 'message': return 'Please review this quote';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+  it('should create a product successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('create')
+      .mockReturnValueOnce('New Product')
+      .mockReturnValueOnce('Product description')
+      .mockReturnValueOnce(99.99)
+      .mockReturnValueOnce('Electronics')
+      .mockReturnValueOnce('SKU123');
 
-    const result = await executeQuotesOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ id: 'prod124', name: 'New Product' });
 
-    expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+    const result = await executeProductOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toHaveLength(1);
     expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
       method: 'POST',
-      url: 'https://api.dealhub.io/v1/quotes/123/send',
+      url: 'https://api.dealhub.io/v1/products',
       headers: {
-        'Authorization': 'Bearer test-api-key',
+        'Authorization': 'Bearer test-key',
         'Content-Type': 'application/json',
-        'X-Tenant-ID': 'test-tenant',
       },
       body: {
-        email: 'customer@example.com',
-        message: 'Please review this quote',
+        name: 'New Product',
+        description: 'Product description',
+        price: 99.99,
+        category: 'Electronics',
+        sku: 'SKU123',
       },
       json: true,
     });
   });
 
   it('should handle errors gracefully when continueOnFail is true', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'get';
-        case 'id': return 'invalid-id';
-        default: return undefined;
-      }
-    });
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('get');
     mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Quote not found'));
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
 
-    const result = await executeQuotesOperations.call(mockExecuteFunctions, [{ json: {} }]);
+    const result = await executeProductOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-    expect(result).toEqual([{ json: { error: 'Quote not found' }, pairedItem: { item: 0 } }]);
+    expect(result).toHaveLength(1);
+    expect(result[0].json.error).toBe('API Error');
   });
 
-  it('should throw error when operation is unknown', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'unknownOperation';
-        default: return undefined;
-      }
-    });
+  it('should throw error when continueOnFail is false', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('get');
+    mockExecuteFunctions.continueOnFail.mockReturnValue(false);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
 
-    await expect(executeQuotesOperations.call(mockExecuteFunctions, [{ json: {} }]))
-      .rejects
-      .toThrow('Unknown operation: unknownOperation');
+    await expect(executeProductOperations.call(mockExecuteFunctions, [{ json: {} }]))
+      .rejects.toThrow('API Error');
   });
 });
 
-describe('DealRooms Resource', () => {
+describe('Account Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({ 
+				apiKey: 'test-key', 
+				baseUrl: 'https://api.dealhub.io/v1' 
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: { 
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn() 
+			},
+		};
+	});
+
+	it('should get all accounts successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			if (param === 'operation') return 'getAll';
+			if (param === 'limit') return 50;
+			if (param === 'offset') return 0;
+			return '';
+		});
+
+		const mockResponse = { accounts: [{ id: '123', name: 'Test Account' }] };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+		const result = await executeAccountOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockResponse);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://api.dealhub.io/v1/accounts?limit=50&offset=0',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			json: true,
+		});
+	});
+
+	it('should handle getAll error', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			if (param === 'operation') return 'getAll';
+			return '';
+		});
+
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+		await expect(executeAccountOperations.call(mockExecuteFunctions, [{ json: {} }])).rejects.toThrow('API Error');
+	});
+
+	it('should get a specific account successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			if (param === 'operation') return 'get';
+			if (param === 'accountId') return '123';
+			return '';
+		});
+
+		const mockResponse = { id: '123', name: 'Test Account' };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+		const result = await executeAccountOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockResponse);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://api.dealhub.io/v1/accounts/123',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			json: true,
+		});
+	});
+
+	it('should create an account successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			if (param === 'operation') return 'create';
+			if (param === 'name') return 'New Account';
+			if (param === 'domain') return 'example.com';
+			if (param === 'industry') return 'Technology';
+			return '';
+		});
+
+		const mockResponse = { id: '456', name: 'New Account' };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+		const result = await executeAccountOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockResponse);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'POST',
+			url: 'https://api.dealhub.io/v1/accounts',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			body: {
+				name: 'New Account',
+				domain: 'example.com',
+				industry: 'Technology',
+			},
+			json: true,
+		});
+	});
+
+	it('should delete an account successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			if (param === 'operation') return 'delete';
+			if (param === 'accountId') return '123';
+			return '';
+		});
+
+		const mockResponse = { success: true };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+		const result = await executeAccountOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockResponse);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'DELETE',
+			url: 'https://api.dealhub.io/v1/accounts/123',
+			headers: {
+				'Authorization': 'Bearer test-key',
+				'Content-Type': 'application/json',
+			},
+			json: true,
+		});
+	});
+
+	it('should handle continue on fail', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			if (param === 'operation') return 'get';
+			if (param === 'accountId') return '123';
+			return '';
+		});
+
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+		const result = await executeAccountOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({ error: 'API Error' });
+	});
+});
+
+describe('Contact Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.dealhub.io/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+			},
+		};
+	});
+
+	describe('getAll operation', () => {
+		it('should retrieve all contacts', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAll')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(50)
+				.mockReturnValueOnce(0);
+
+			const mockResponse = { contacts: [{ id: '1', name: 'Test Contact' }] };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://api.dealhub.io/v1/contacts?limit=50&offset=0',
+				headers: {
+					Authorization: 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+
+		it('should handle errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getAll');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('get operation', () => {
+		it('should retrieve a specific contact', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('get')
+				.mockReturnValueOnce('contact123');
+
+			const mockResponse = { id: 'contact123', name: 'Test Contact' };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://api.dealhub.io/v1/contacts/contact123',
+				headers: {
+					Authorization: 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('create operation', () => {
+		it('should create a new contact', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('create')
+				.mockReturnValueOnce('John')
+				.mockReturnValueOnce('Doe')
+				.mockReturnValueOnce('john@example.com')
+				.mockReturnValueOnce('account123')
+				.mockReturnValueOnce('+1234567890')
+				.mockReturnValueOnce('Developer');
+
+			const mockResponse = { id: 'contact123', first_name: 'John', last_name: 'Doe' };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'POST',
+				url: 'https://api.dealhub.io/v1/contacts',
+				headers: {
+					Authorization: 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				body: {
+					first_name: 'John',
+					last_name: 'Doe',
+					email: 'john@example.com',
+					account_id: 'account123',
+					phone: '+1234567890',
+					title: 'Developer',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('update operation', () => {
+		it('should update contact information', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('update')
+				.mockReturnValueOnce('contact123')
+				.mockReturnValueOnce('Jane')
+				.mockReturnValueOnce('Smith')
+				.mockReturnValueOnce('jane@example.com')
+				.mockReturnValueOnce('+1987654321')
+				.mockReturnValueOnce('Manager');
+
+			const mockResponse = { id: 'contact123', first_name: 'Jane', last_name: 'Smith' };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'PUT',
+				url: 'https://api.dealhub.io/v1/contacts/contact123',
+				headers: {
+					Authorization: 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				body: {
+					first_name: 'Jane',
+					last_name: 'Smith',
+					email: 'jane@example.com',
+					phone: '+1987654321',
+					title: 'Manager',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('delete operation', () => {
+		it('should delete a contact', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('delete')
+				.mockReturnValueOnce('contact123');
+
+			const mockResponse = { success: true };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'DELETE',
+				url: 'https://api.dealhub.io/v1/contacts/contact123',
+				headers: {
+					Authorization: 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('getActivity operation', () => {
+		it('should get contact engagement activity', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getActivity')
+				.mockReturnValueOnce('contact123')
+				.mockReturnValueOnce('2023-01-01')
+				.mockReturnValueOnce('2023-12-31');
+
+			const mockResponse = { activities: [{ id: '1', type: 'email_open' }] };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeContactOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://api.dealhub.io/v1/contacts/contact123/activity?date_from=2023-01-01&date_to=2023-12-31',
+				headers: {
+					Authorization: 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+});
+
+describe('Template Resource', () => {
   let mockExecuteFunctions: any;
 
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.dealhub.io/v1',
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.dealhub.io/v1' 
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
+      helpers: { 
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn() 
       },
     };
   });
 
-  describe('create operation', () => {
-    it('should create a new DealRoom successfully', async () => {
-      const mockResponse = {
-        id: 'dealroom-123',
-        name: 'Test DealRoom',
-        quoteId: 'quote-456',
-        status: 'active',
-      };
+  describe('getAll operation', () => {
+    it('should get all templates successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getAll')
+        .mockReturnValueOnce('quote')
+        .mockReturnValueOnce('standard')
+        .mockReturnValueOnce(50)
+        .mockReturnValueOnce(0);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'create';
-          case 'name': return 'Test DealRoom';
-          case 'quoteId': return 'quote-456';
-          case 'template': return '';
-          case 'members': return '';
-          default: return '';
-        }
-      });
-
+      const mockResponse = { templates: [], total: 0 };
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeDealRoomsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
       expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/dealrooms',
+        method: 'GET',
+        url: 'https://api.dealhub.io/v1/templates',
         headers: {
-          'Authorization': 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
         },
+        qs: { type: 'quote', category: 'standard', limit: 50, offset: 0 },
         json: true,
-        body: {
-          name: 'Test DealRoom',
-          quoteId: 'quote-456',
-        },
       });
+    });
+
+    it('should handle getAll error', async () => {
+      mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getAll');
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+      await expect(executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      )).rejects.toThrow('API Error');
     });
   });
 
   describe('get operation', () => {
-    it('should retrieve DealRoom details successfully', async () => {
-      const mockResponse = {
-        id: 'dealroom-123',
-        name: 'Test DealRoom',
-        status: 'active',
-        members: [],
-      };
+    it('should get template successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('get')
+        .mockReturnValueOnce('template-123');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'get';
-          case 'dealRoomId': return 'dealroom-123';
-          default: return '';
-        }
-      });
-
+      const mockResponse = { id: 'template-123', name: 'Test Template' };
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeDealRoomsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
       expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/dealrooms/dealroom-123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
     });
-  });
-
-  describe('getAll operation', () => {
-    it('should list all DealRooms with filters', async () => {
-      const mockResponse = {
-        data: [
-          { id: 'dealroom-123', name: 'DealRoom 1' },
-          { id: 'dealroom-456', name: 'DealRoom 2' },
-        ],
-        total: 2,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getAll';
-          case 'status': return 'active';
-          case 'ownerId': return 'user-123';
-          case 'limit': return 10;
-          case 'offset': return 0;
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeDealRoomsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/dealrooms?status=active&ownerId=user-123&limit=10&offset=0',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('addMember operation', () => {
-    it('should add member to DealRoom successfully', async () => {
-      const mockResponse = {
-        id: 'member-789',
-        email: 'test@example.com',
-        role: 'viewer',
-        dealRoomId: 'dealroom-123',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'addMember';
-          case 'dealRoomId': return 'dealroom-123';
-          case 'email': return 'test@example.com';
-          case 'role': return 'viewer';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeDealRoomsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/dealrooms/dealroom-123/members',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        body: {
-          email: 'test@example.com',
-          role: 'viewer',
-        },
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors properly', async () => {
-      const mockError = new Error('API Error');
-      mockError.httpCode = 404;
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'get';
-          case 'dealRoomId': return 'invalid-id';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      await expect(
-        executeDealRoomsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('API Error');
-    });
-
-    it('should continue on fail when enabled', async () => {
-      const mockError = new Error('API Error');
-      
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'get';
-          case 'dealRoomId': return 'invalid-id';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      const result = await executeDealRoomsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ 
-        json: { error: 'API Error' }, 
-        pairedItem: { item: 0 } 
-      }]);
-    });
-  });
-});
-
-describe('Products Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.dealhub.io/v1',
-        tenantId: 'test-tenant',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
   });
 
   describe('create operation', () => {
-    it('should create a product successfully', async () => {
-      const mockResponse = { id: '123', name: 'Test Product', price: 99.99 };
-      
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'create';
-          case 'name': return 'Test Product';
-          case 'description': return 'Test Description';
-          case 'price': return 99.99;
-          case 'category': return 'Electronics';
-          default: return null;
-        }
-      });
+    it('should create template successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('create')
+        .mockReturnValueOnce('New Template')
+        .mockReturnValueOnce('quote')
+        .mockReturnValueOnce('<html>Content</html>')
+        .mockReturnValueOnce('standard');
 
+      const mockResponse = { id: 'template-456', name: 'New Template' };
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
       expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/products',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        body: {
-          name: 'Test Product',
-          description: 'Test Description',
-          price: 99.99,
-          category: 'Electronics',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('get operation', () => {
-    it('should retrieve a product successfully', async () => {
-      const mockResponse = { id: '123', name: 'Test Product', price: 99.99 };
-      
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'get';
-          case 'id': return '123';
-          default: return null;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/products/123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getAll operation', () => {
-    it('should retrieve all products with filters', async () => {
-      const mockResponse = { products: [{ id: '123', name: 'Test Product' }], total: 1 };
-      
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getAll';
-          case 'category': return 'Electronics';
-          case 'status': return 'active';
-          case 'priceMin': return 10;
-          case 'priceMax': return 100;
-          case 'limit': return 50;
-          case 'offset': return 0;
-          default: return null;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/products?category=Electronics&status=active&priceMin=10&priceMax=100&limit=50',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
     });
   });
 
   describe('update operation', () => {
-    it('should update a product successfully', async () => {
-      const mockResponse = { id: '123', name: 'Updated Product', price: 149.99 };
-      
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'update';
-          case 'id': return '123';
-          case 'name': return 'Updated Product';
-          case 'description': return 'Updated Description';
-          case 'price': return 149.99;
-          case 'status': return 'active';
-          default: return null;
-        }
-      });
+    it('should update template successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('update')
+        .mockReturnValueOnce('template-123')
+        .mockReturnValueOnce('Updated Template')
+        .mockReturnValueOnce('<html>Updated Content</html>')
+        .mockReturnValueOnce('premium');
 
+      const mockResponse = { id: 'template-123', name: 'Updated Template' };
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
       expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'PUT',
-        url: 'https://api.dealhub.io/v1/products/123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        body: {
-          name: 'Updated Product',
-          description: 'Updated Description',
-          price: 149.99,
-          status: 'active',
-        },
-        json: true,
-      });
     });
   });
 
   describe('delete operation', () => {
-    it('should delete a product successfully', async () => {
+    it('should delete template successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('delete')
+        .mockReturnValueOnce('template-123');
+
       const mockResponse = { success: true };
-      
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'delete';
-          case 'id': return '123';
-          default: return null;
-        }
-      });
-
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
       expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'DELETE',
-        url: 'https://api.dealhub.io/v1/products/123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
     });
   });
 
-  describe('createConfiguration operation', () => {
-    it('should create a product configuration successfully', async () => {
-      const mockResponse = { id: 'config123', name: 'Test Config' };
-      
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'createConfiguration';
-          case 'id': return '123';
-          case 'configurationName': return 'Test Config';
-          case 'options': return '{"size": ["S", "M", "L"]}';
-          case 'pricing': return '{"size": {"S": 0, "M": 5, "L": 10}}';
-          default: return null;
-        }
-      });
+  describe('clone operation', () => {
+    it('should clone template successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('clone')
+        .mockReturnValueOnce('template-123')
+        .mockReturnValueOnce('Cloned Template');
 
+      const mockResponse = { id: 'template-789', name: 'Cloned Template' };
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeTemplateOperations.call(
+        mockExecuteFunctions,
+        [{ json: {} }]
+      );
 
       expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/products/123/configurations',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        body: {
-          name: 'Test Config',
-          options: { size: ['S', 'M', 'L'] },
-          pricing: { size: { S: 0, M: 5, L: 10 } },
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors correctly', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'get';
-          case 'id': return '123';
-          default: return null;
-        }
-      });
-
-      const error = new Error('Product not found');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(error);
-
-      await expect(
-        executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Product not found');
-    });
-
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'get';
-          case 'id': return '123';
-          default: return null;
-        }
-      });
-
-      const error = new Error('Product not found');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(error);
-
-      const result = await executeProductsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ 
-        json: { error: 'Product not found' }, 
-        pairedItem: { item: 0 } 
-      }]);
-    });
-  });
-});
-
-describe('Contacts Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.dealhub.io/v1',
-        tenantId: 'test-tenant',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('create operation', () => {
-    it('should create a new contact successfully', async () => {
-      const mockResponse = { id: '123', firstName: 'John', lastName: 'Doe' };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'create',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com',
-          company: 'Test Corp',
-          phone: '555-0123',
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/contacts',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        body: {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com',
-          company: 'Test Corp',
-          phone: '555-0123',
-        },
-        json: true,
-      });
-    });
-
-    it('should handle API errors', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'create',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com',
-          company: 'Test Corp',
-          phone: '555-0123',
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      await expect(executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }])).rejects.toThrow('API Error');
-    });
-  });
-
-  describe('get operation', () => {
-    it('should retrieve contact details successfully', async () => {
-      const mockResponse = { id: '123', firstName: 'John', lastName: 'Doe' };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'get',
-          contactId: '123',
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/contacts/123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getAll operation', () => {
-    it('should list all contacts with filters', async () => {
-      const mockResponse = { contacts: [{ id: '123' }, { id: '456' }] };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'getAll',
-          company: 'Test Corp',
-          status: 'active',
-          tag: 'vip',
-          limit: 10,
-          offset: 0,
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/contacts?company=Test%20Corp&status=active&tag=vip&limit=10&offset=0',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('addNote operation', () => {
-    it('should add note to contact successfully', async () => {
-      const mockResponse = { id: 'note-123', note: 'Test note', type: 'general' };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'addNote',
-          contactId: '123',
-          note: 'Test note',
-          type: 'general',
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/contacts/123/notes',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        body: {
-          note: 'Test note',
-          type: 'general',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('syncCRM operation', () => {
-    it('should sync contacts with CRM successfully', async () => {
-      const mockResponse = { syncId: 'sync-123', status: 'completed' };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'syncCRM',
-          crmType: 'salesforce',
-          mapping: '{"firstName": "First_Name__c", "lastName": "Last_Name__c"}',
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.dealhub.io/v1/contacts/sync',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        body: {
-          crmType: 'salesforce',
-          mapping: { firstName: 'First_Name__c', lastName: 'Last_Name__c' },
-        },
-        json: true,
-      });
-    });
-
-    it('should handle invalid JSON mapping', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'syncCRM',
-          crmType: 'salesforce',
-          mapping: 'invalid json',
-        };
-        return params[paramName];
-      });
-
-      await expect(executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }])).rejects.toThrow();
-    });
-  });
-
-  describe('error handling', () => {
-    it('should continue on fail when enabled', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        const params: any = {
-          operation: 'get',
-          contactId: '123',
-        };
-        return params[paramName];
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const result = await executeContactsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('API Error');
-    });
-  });
-});
-
-describe('Integrations Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.dealhub.io/v1',
-        tenantId: 'test-tenant',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getAll operation', () => {
-    it('should list all integrations successfully', async () => {
-      const mockResponse = {
-        data: [
-          {
-            id: 'int-1',
-            type: 'salesforce',
-            status: 'active',
-            name: 'Salesforce Integration',
-          },
-        ],
-        total: 1,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getAll';
-          case 'type': return 'salesforce';
-          case 'status': return 'active';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeIntegrationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/integrations?type=salesforce&status=active',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('connect operation', () => {
-    it('should connect integration successfully', async () => {
-      const mockResponse = {
-        id: 'int-1',
-        type: 'salesforce',
-        status: 'connected',
-        message: 'Integration connected successfully',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'connect';
-          case 'integrationType': return 'salesforce';
-          case 'credentials': return {
-            salesforce: {
-              username: 'test@example.com',
-              password: 'password',
-              securityToken: 'token',
-            },
-          };
-          case 'connectionSettings': return {
-            syncFrequency: 'hourly',
-            autoSync: true,
-          };
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeIntegrationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('updateConfig operation', () => {
-    it('should update integration configuration successfully', async () => {
-      const mockResponse = {
-        id: 'int-1',
-        type: 'salesforce',
-        status: 'active',
-        message: 'Configuration updated successfully',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'updateConfig';
-          case 'integrationType': return 'salesforce';
-          case 'configSettings': return {
-            syncFrequency: 'daily',
-            autoSync: false,
-          };
-          case 'fieldMapping': return {
-            mapping: [
-              {
-                dealhubField: 'company_name',
-                externalField: 'Account.Name',
-                direction: 'bidirectional',
-              },
-            ],
-          };
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeIntegrationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('triggerSync operation', () => {
-    it('should trigger sync successfully', async () => {
-      const mockResponse = {
-        syncId: 'sync-123',
-        status: 'running',
-        message: 'Synchronization started',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'triggerSync';
-          case 'integrationType': return 'salesforce';
-          case 'syncDirection': return 'bidirectional';
-          case 'entities': return ['contacts', 'deals'];
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeIntegrationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors correctly', async () => {
-      const mockError = {
-        statusCode: 404,
-        message: 'Integration not found',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getStatus';
-          case 'integrationType': return 'nonexistent';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      await expect(
-        executeIntegrationsOperations.call(mockExecuteFunctions, [{ json: {} }]),
-      ).rejects.toThrow();
-    });
-
-    it('should continue on fail when configured', async () => {
-      const mockError = new Error('Connection failed');
-
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getAll';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      const result = await executeIntegrationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('Connection failed');
-    });
-  });
-});
-
-describe('Analytics Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.dealhub.io/v1',
-        tenantId: 'test-tenant',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getQuoteAnalytics', () => {
-    it('should get quote analytics successfully', async () => {
-      const mockResponse = {
-        total_quotes: 150,
-        quotes_sent: 120,
-        quotes_viewed: 80,
-        quotes_accepted: 45,
-        conversion_rate: 0.3,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getQuoteAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-01-31T23:59:59.999Z';
-          case 'groupBy': return 'month';
-          case 'filters': return '{"status": "active"}';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.dealhub.io/v1/analytics/quotes?dateFrom=2024-01-01T00%3A00%3A00.000Z&dateTo=2024-01-31T23%3A59%3A59.999Z&groupBy=month&status=active',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': 'test-tenant',
-        },
-        json: true,
-      });
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
-    });
-
-    it('should handle invalid JSON in filters', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getQuoteAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-01-31T23:59:59.999Z';
-          case 'groupBy': return 'month';
-          case 'filters': return 'invalid json';
-          default: return '';
-        }
-      });
-
-      await expect(
-        executeAnalyticsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Invalid JSON in filters parameter');
-    });
-  });
-
-  describe('getDealRoomAnalytics', () => {
-    it('should get DealRoom analytics successfully', async () => {
-      const mockResponse = {
-        total_views: 250,
-        unique_visitors: 45,
-        avg_time_spent: 320,
-        documents_viewed: 180,
-        engagement_score: 85,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getDealRoomAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-01-31T23:59:59.999Z';
-          case 'dealRoomId': return 'dr-123';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('getProductAnalytics', () => {
-    it('should get product analytics successfully', async () => {
-      const mockResponse = {
-        product_views: 500,
-        quotes_generated: 75,
-        revenue_attributed: 125000,
-        top_configurations: ['config1', 'config2'],
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getProductAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-01-31T23:59:59.999Z';
-          case 'productId': return 'prod-456';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('getPipelineAnalytics', () => {
-    it('should get pipeline analytics successfully', async () => {
-      const mockResponse = {
-        total_deals: 200,
-        stage_conversion_rates: {
-          prospect: 0.8,
-          qualified: 0.6,
-          proposal: 0.4,
-          negotiation: 0.7,
-        },
-        avg_deal_size: 25000,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getPipelineAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-01-31T23:59:59.999Z';
-          case 'stage': return 'proposal';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('getConversionAnalytics', () => {
-    it('should get conversion analytics successfully', async () => {
-      const mockResponse = {
-        total_conversions: 85,
-        conversion_rate: 0.28,
-        funnel_metrics: {
-          leads: 300,
-          qualified: 180,
-          proposals: 120,
-          closed: 85,
-        },
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getConversionAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-01-31T23:59:59.999Z';
-          case 'funnel': return 'sales-funnel-1';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('getRevenueAnalytics', () => {
-    it('should get revenue analytics successfully', async () => {
-      const mockResponse = {
-        total_revenue: 2500000,
-        forecast_revenue: 3200000,
-        monthly_breakdown: [
-          { month: '2024-01', revenue: 850000 },
-          { month: '2024-02', revenue: 920000 },
-        ],
-        growth_rate: 0.15,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getRevenueAnalytics';
-          case 'dateFrom': return '2024-01-01T00:00:00.000Z';
-          case 'dateTo': return '2024-02-29T23:59:59.999Z';
-          case 'period': return 'monthly';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors', async () => {
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getQuoteAnalytics');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue({
-        httpCode: 404,
-        message: 'Analytics data not found',
-      });
-
-      await expect(
-        executeAnalyticsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow();
-    });
-
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getQuoteAnalytics');
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const result = await executeAnalyticsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result[0].json.error).toEqual('API Error');
-    });
-
-    it('should throw error for unknown operation', async () => {
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('unknownOperation');
-
-      await expect(
-        executeAnalyticsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Unknown operation: unknownOperation');
     });
   });
 });
