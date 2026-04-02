@@ -8,25 +8,25 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-An n8n community node for integrating with DealHub's sales engagement platform. This node provides access to 6 core resources including Quotes, DealRooms, Products, Contacts, Integrations, and Analytics, enabling automation of sales processes, deal management, and revenue operations workflows.
+A comprehensive n8n community node for DealHub, providing seamless integration with DealHub's sales enablement platform. This node offers 6 resources with complete CRUD operations, enabling automated deal management, customer relationship workflows, and sales process optimization.
 
 ![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![DealHub API](https://img.shields.io/badge/DealHub-API-orange)
 ![Sales Automation](https://img.shields.io/badge/Sales-Automation-green)
-![Revenue Operations](https://img.shields.io/badge/RevOps-Ready-purple)
+![Deal Management](https://img.shields.io/badge/Deal-Management-orange)
+![CRM Integration](https://img.shields.io/badge/CRM-Integration-purple)
 
 ## Features
 
-- **Quote Management** - Create, update, and track sales quotes with advanced pricing and approval workflows
-- **DealRoom Operations** - Manage collaborative deal spaces with document sharing and stakeholder engagement
-- **Product Catalog** - Access and manage product information, pricing, and configuration options
-- **Contact Management** - Synchronize contact data and manage buyer personas and stakeholder information  
-- **Integration Hub** - Connect DealHub with CRM systems, payment processors, and other sales tools
-- **Analytics & Reporting** - Extract deal performance metrics, conversion rates, and sales pipeline analytics
-- **Real-time Updates** - Webhook support for instant notifications on deal status changes
-- **Bulk Operations** - Process multiple records efficiently with batch operations support
+- **Complete Deal Management** - Create, update, and track deals throughout the sales pipeline
+- **DealRoom Operations** - Manage collaborative sales rooms for complex deals and stakeholder engagement
+- **Product Catalog Integration** - Sync product information, pricing, and configurations
+- **Account Management** - Handle customer accounts, territories, and hierarchical relationships
+- **Contact Operations** - Manage contacts, roles, and communication preferences
+- **Template Management** - Create and manage proposal templates, quote templates, and sales collateral
+- **Advanced Filtering** - Query resources with complex filters and sorting options
+- **Bulk Operations** - Process multiple records efficiently with batch operations
 
 ## Installation
 
@@ -61,177 +61,143 @@ n8n start
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| API Key | Your DealHub API key from Settings > API Keys | Yes |
+| API Key | Your DealHub API key from account settings | Yes |
 | Environment | DealHub environment (production/sandbox) | Yes |
 | Base URL | Custom DealHub instance URL (if applicable) | No |
 
 ## Resources & Operations
 
-### 1. Quotes
+### 1. Deal
 
 | Operation | Description |
 |-----------|-------------|
-| Create | Create a new quote with products, pricing, and terms |
-| Get | Retrieve quote details by ID |
-| Update | Update quote information, products, or pricing |
-| Delete | Remove a quote from the system |
-| List | Get all quotes with filtering and pagination |
-| Send | Send quote to buyers via email |
-| Approve | Submit quote for approval workflow |
-| Clone | Create a copy of an existing quote |
+| Create | Create a new deal with specified parameters |
+| Get | Retrieve a specific deal by ID |
+| Get All | List all deals with optional filtering |
+| Update | Update an existing deal's properties |
+| Delete | Remove a deal from the system |
+| Get Activities | Retrieve activity history for a deal |
+| Add Note | Add notes or comments to a deal |
 
-### 2. DealRooms
+### 2. DealRoom
 
 | Operation | Description |
 |-----------|-------------|
 | Create | Create a new collaborative deal room |
-| Get | Retrieve deal room details and content |
-| Update | Update deal room settings and permissions |
+| Get | Retrieve deal room details and participants |
+| Get All | List all deal rooms with filtering options |
+| Update | Update deal room settings and content |
 | Delete | Remove a deal room |
-| List | Get all deal rooms with filtering |
-| Add Content | Upload documents and materials to deal room |
-| Invite | Invite stakeholders to join deal room |
-| Track Activity | Get engagement and activity metrics |
+| Invite Participants | Add new participants to a deal room |
+| Get Analytics | Retrieve engagement analytics for deal rooms |
 
-### 3. Products
+### 3. Product
 
 | Operation | Description |
 |-----------|-------------|
-| Create | Add new product to catalog |
-| Get | Retrieve product details and specifications |
-| Update | Update product information and pricing |
-| Delete | Remove product from catalog |
-| List | Get all products with filtering and search |
-| Get Pricing | Retrieve current pricing and discount rules |
-| Update Pricing | Modify product pricing and rules |
-| Bulk Import | Import multiple products from external source |
+| Create | Add a new product to the catalog |
+| Get | Retrieve specific product information |
+| Get All | List all products with search and filtering |
+| Update | Update product details and pricing |
+| Delete | Remove a product from the catalog |
+| Get Pricing | Retrieve pricing rules and configurations |
+| Update Inventory | Manage product inventory levels |
 
-### 4. Contacts
-
-| Operation | Description |
-|-----------|-------------|
-| Create | Add new contact to DealHub |
-| Get | Retrieve contact details and history |
-| Update | Update contact information |
-| Delete | Remove contact from system |
-| List | Get all contacts with filtering |
-| Merge | Combine duplicate contact records |
-| Add to Deal | Associate contact with specific deal |
-| Get Activity | Retrieve contact engagement history |
-
-### 5. Integrations
+### 4. Account
 
 | Operation | Description |
 |-----------|-------------|
-| List | Get all available integrations |
-| Get | Retrieve integration configuration details |
-| Create | Set up new integration connection |
-| Update | Modify integration settings |
-| Delete | Remove integration connection |
-| Test | Validate integration connection |
-| Sync | Trigger data synchronization |
-| Get Logs | Retrieve integration activity logs |
+| Create | Create a new customer account |
+| Get | Retrieve account details and hierarchy |
+| Get All | List all accounts with territory filtering |
+| Update | Update account information and settings |
+| Delete | Remove an account from the system |
+| Get Contacts | Retrieve all contacts associated with an account |
+| Get Deals | List all deals for a specific account |
 
-### 6. Analytics
+### 5. Contact
 
 | Operation | Description |
 |-----------|-------------|
-| Get Metrics | Retrieve key performance indicators |
-| Deal Analytics | Get deal pipeline and conversion metrics |
-| Quote Analytics | Analyze quote performance and win rates |
-| User Activity | Get user engagement and activity reports |
-| Revenue Reports | Generate revenue and forecasting data |
-| Time Reports | Analyze deal cycle and response times |
-| Custom Query | Execute custom analytics queries |
-| Export Data | Export analytics data in various formats |
+| Create | Add a new contact to the system |
+| Get | Retrieve contact details and preferences |
+| Get All | List contacts with search and filtering |
+| Update | Update contact information and roles |
+| Delete | Remove a contact from the system |
+| Get Activities | Retrieve interaction history for a contact |
+| Update Preferences | Manage communication preferences |
+
+### 6. Template
+
+| Operation | Description |
+|-----------|-------------|
+| Create | Create a new proposal or quote template |
+| Get | Retrieve template content and structure |
+| Get All | List all available templates |
+| Update | Modify template content and settings |
+| Delete | Remove a template from the library |
+| Clone | Create a copy of an existing template |
+| Generate Document | Create a document from a template |
 
 ## Usage Examples
 
 ```javascript
-// Create a new quote with products
+// Create a new deal
 {
-  "resource": "quotes",
-  "operation": "create",
-  "data": {
-    "name": "Q4 Enterprise Solution",
-    "buyerCompany": "Acme Corporation",
-    "buyerEmail": "procurement@acme.com",
-    "products": [
-      {
-        "productId": "prod_123",
-        "quantity": 100,
-        "unitPrice": 99.99
-      }
-    ],
-    "validUntil": "2024-12-31"
-  }
+  "name": "Enterprise Software License",
+  "accountId": "acc_123456",
+  "amount": 150000,
+  "currency": "USD",
+  "closeDate": "2024-03-15",
+  "stage": "proposal",
+  "probability": 75,
+  "description": "Annual enterprise software license renewal"
 }
 ```
 
 ```javascript
-// Create deal room and invite stakeholders
+// Set up a deal room for stakeholder collaboration
 {
-  "resource": "dealrooms",
-  "operation": "create",
-  "data": {
-    "name": "Acme Corp - Enterprise Deal",
-    "dealValue": 150000,
-    "stakeholders": [
-      {
-        "email": "john.doe@acme.com",
-        "role": "Decision Maker"
-      },
-      {
-        "email": "jane.smith@acme.com", 
-        "role": "Technical Lead"
-      }
-    ],
-    "content": [
-      "proposal.pdf",
-      "technical-specs.docx"
-    ]
-  }
+  "dealId": "deal_789012",
+  "name": "Q1 Enterprise Renewal",
+  "participants": [
+    { "email": "buyer@client.com", "role": "decision_maker" },
+    { "email": "technical@client.com", "role": "technical_contact" }
+  ],
+  "documents": ["proposal.pdf", "technical_specs.pdf"],
+  "expirationDate": "2024-02-28"
 }
 ```
 
 ```javascript
-// Get deal analytics for current quarter
+// Create a product with pricing tiers
 {
-  "resource": "analytics",
-  "operation": "dealAnalytics",
-  "parameters": {
-    "dateRange": "current_quarter",
-    "metrics": ["conversion_rate", "avg_deal_size", "cycle_time"],
-    "groupBy": "month",
-    "filters": {
-      "dealValue": {"min": 10000},
-      "stage": ["negotiation", "proposal", "closed_won"]
-    }
-  }
+  "name": "Professional Plan",
+  "sku": "PRO-PLAN-2024",
+  "category": "Software License",
+  "basePrice": 99.00,
+  "currency": "USD",
+  "pricingTiers": [
+    { "quantity": 1, "price": 99.00 },
+    { "quantity": 10, "price": 89.00 },
+    { "quantity": 50, "price": 79.00 }
+  ],
+  "description": "Professional tier with advanced features"
 }
 ```
 
 ```javascript
-// Bulk update product pricing
+// Update contact with new role and preferences
 {
-  "resource": "products",
-  "operation": "bulkImport",
-  "data": {
-    "products": [
-      {
-        "sku": "ENT-001",
-        "name": "Enterprise License",
-        "price": 1999.99,
-        "discountRules": {
-          "volume": [
-            {"min": 10, "discount": 0.1},
-            {"min": 50, "discount": 0.15}
-          ]
-        }
-      }
-    ],
-    "updateExisting": true
-  }
+  "contactId": "contact_345678",
+  "role": "procurement_manager",
+  "department": "Finance",
+  "communicationPreferences": {
+    "email": true,
+    "phone": false,
+    "preferredTime": "morning"
+  },
+  "decisionMakingAuthority": "budget_approver"
 }
 ```
 
@@ -240,11 +206,11 @@ n8n start
 | Error | Description | Solution |
 |-------|-------------|----------|
 | 401 Unauthorized | Invalid or expired API key | Verify API key in credentials and check expiration |
-| 403 Forbidden | Insufficient permissions for operation | Contact admin to verify user permissions and API scope |
-| 404 Not Found | Requested resource (quote, deal, etc.) doesn't exist | Check resource ID and verify it exists in DealHub |
-| 422 Validation Error | Invalid data format or missing required fields | Review API documentation and validate request payload |
-| 429 Rate Limit | Too many API requests in time period | Implement retry logic with exponential backoff |
-| 500 Server Error | DealHub internal server error | Check DealHub status page and retry after delay |
+| 403 Forbidden | Insufficient permissions for operation | Contact admin to verify user permissions |
+| 404 Not Found | Resource ID doesn't exist | Verify resource ID and check if resource was deleted |
+| 422 Validation Error | Invalid data format or missing required fields | Review request payload and API documentation |
+| 429 Rate Limited | Too many requests in time window | Implement delays between requests or reduce frequency |
+| 500 Server Error | DealHub service temporarily unavailable | Retry request after delay or check service status |
 
 ## Development
 
@@ -289,5 +255,5 @@ Contributions are welcome! Please ensure:
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-dealhub/issues)
-- **DealHub API Documentation**: [DealHub Developer Portal](https://developers.dealhub.io)
-- **DealHub Community**: [DealHub User Community](https://community.dealhub.io)
+- **DealHub API Documentation**: [https://developers.dealhub.io](https://developers.dealhub.io)
+- **Community Forum**: [DealHub Community](https://community.dealhub.io)
